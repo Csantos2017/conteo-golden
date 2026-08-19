@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Conteo · Golden</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E7C6B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Conteo">
+<link rel="apple-touch-icon" href="icono-192.png">
+<style>
+:root{
+  --tinta:#0B2027;--papel:#F7F5F0;--marca:#0E7C6B;--marca-claro:#E3F0ED;
+  --naranja:#E8833A;--rojo:#C4432B;--verde:#2E8B57;--gris:#6B7B80;
+  --linea:#DDD8CE;--blanco:#FFFFFF;
+  --sombra:0 2px 8px rgba(11,32,39,.08);--sombra-alta:0 8px 24px rgba(11,32,39,.16);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Trebuchet MS',-apple-system,'Segoe UI',system-ui,sans-serif;
+  background:var(--papel);color:var(--tinta);-webkit-font-smoothing:antialiased;padding-bottom:80px}
+
+/* Encabezado */
+.top{background:var(--tinta);color:var(--papel);padding:14px 16px;position:sticky;top:0;z-index:50;
+  border-radius:0 0 18px 18px;box-shadow:var(--sombra-alta);display:flex;align-items:center;gap:10px}
+.top-logo{width:30px;height:30px;background:var(--marca);border-radius:8px;display:flex;
+  align-items:center;justify-content:center;font-size:17px;transform:rotate(-4deg)}
+.top-nombre{font-size:19px;font-weight:bold}.top-nombre span{color:var(--marca)}
+.top-back{margin-left:auto;background:#1B333B;border:none;color:var(--papel);border-radius:9px;
+  padding:8px 12px;font-size:13px;font-weight:bold;font-family:inherit;cursor:pointer;display:none}
+.top-back.ver{display:block}
+
+.pantalla{display:none;padding:16px}.pantalla.activa{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.titulo{font-size:21px;font-weight:bold;margin-bottom:3px}
+.subtitulo{font-size:13px;color:var(--gris);margin-bottom:16px;line-height:1.4}
+.eyebrow{font-size:11px;font-weight:bold;color:var(--marca);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+
+/* Acciones */
+.accion{background:var(--blanco);border:1px solid var(--linea);border-radius:16px;padding:17px;
+  margin-bottom:12px;box-shadow:var(--sombra);display:flex;align-items:center;gap:13px;cursor:pointer}
+.accion:active{transform:scale(.98)}
+.accion-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:23px;flex-shrink:0}
+.ico-verde{background:var(--marca-claro)}.ico-naranja{background:#FBEEDF}.ico-azul{background:#E4EEF0}.ico-gris{background:#EDEAE3}
+.accion-txt{flex:1}.accion-tit{font-size:16px;font-weight:bold;margin-bottom:2px}
+.accion-sub{font-size:12.5px;color:var(--gris);line-height:1.35}
+.accion-flecha{color:var(--gris);font-size:20px}
+
+/* Vendedores grid */
+.vend-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.vend-card{background:var(--blanco);border:2px solid var(--linea);border-radius:14px;padding:14px 12px;cursor:pointer;transition:.15s;position:relative}
+.vend-card:active{transform:scale(.97)}
+.vend-card.sel{border-color:var(--marca);background:var(--marca-claro)}
+.vend-card.sel::after{content:'✓';position:absolute;top:8px;right:10px;color:var(--marca);font-weight:bold}
+.vend-nom{font-size:15px;font-weight:bold;margin-bottom:3px}.vend-info{font-size:12px;color:var(--gris)}
+
+/* Total bar */
+.total-bar{background:linear-gradient(120deg,var(--marca),#0a6357);border-radius:16px;padding:16px 18px;
+  color:var(--blanco);display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sombra);margin-bottom:16px}
+.total-lbl{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+.total-num{font-size:28px;font-weight:bold;line-height:1;margin-top:3px}
+.total-cajas-lbl{font-size:12px;opacity:.9;margin-top:2px}
+.total-divisor{width:1px;height:40px;background:rgba(255,255,255,.3)}
+
+/* Buscador */
+.busca{width:100%;background:var(--blanco);border:2px solid var(--linea);border-radius:12px;
+  padding:11px 14px;font-size:15px;color:var(--tinta);font-family:inherit;margin-bottom:12px}
+.busca:focus{outline:none;border-color:var(--marca)}
+
+/* Producto */
+.prod{background:var(--blanco);border:1px solid var(--linea);border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:var(--sombra)}
+.prod.dif-falta{border-left:4px solid var(--rojo)}.prod.dif-sobra{border-left:4px solid var(--verde)}
+.prod-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.prod-nom{font-size:13.5px;font-weight:bold;line-height:1.3;flex:1}
+.prod-sis{background:var(--marca-claro);color:var(--marca);border-radius:9px;padding:5px 9px;font-size:11px;font-weight:bold;white-space:nowrap;text-align:center}
+.prod-sis b{font-size:15px;display:block;line-height:1.1}
+.conteo-fila{display:flex;align-items:center;gap:10px}
+.conteo-lbl{font-size:13px;color:var(--gris);font-weight:bold}
+.stepper{display:flex;align-items:center;margin-left:auto;background:var(--papel);border-radius:11px;padding:3px}
+.step-btn{width:36px;height:36px;border:none;background:var(--blanco);border-radius:9px;font-size:21px;font-weight:bold;color:var(--marca);cursor:pointer;box-shadow:var(--sombra)}
+.step-btn:active{transform:scale(.9)}
+.step-input{width:48px;height:36px;border:none;background:transparent;text-align:center;font-size:19px;font-weight:bold;color:var(--tinta);font-family:inherit}
+.step-input:focus{outline:none}
+.step-quitar{width:34px;height:36px;border:none;background:transparent;color:var(--rojo);font-size:18px;cursor:pointer}
+.badge-dif{font-size:12px;font-weight:bold;padding:3px 9px;border-radius:8px;margin-top:8px;display:inline-block}
+.badge-falta{background:#FBEAE6;color:var(--rojo)}.badge-sobra{background:#E6F4EC;color:var(--verde)}
+
+/* Botón grande */
+.btn-grande{width:100%;background:var(--naranja);color:var(--blanco);border:none;border-radius:14px;padding:16px;
+  font-size:16px;font-weight:bold;font-family:inherit;cursor:pointer;box-shadow:var(--sombra);
+  display:flex;align-items:center;justify-content:center;gap:9px;margin-top:6px}
+.btn-grande:active{transform:translateY(2px)}
+.btn-marca{background:var(--marca)}.btn-gris{background:var(--gris)}
+
+/* Dos formas */
+.dos-formas{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:0 0 14px}
+.forma{background:var(--blanco);border:2px solid var(--linea);border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer}
+.forma:active{transform:scale(.97)}.forma.sel{border-color:var(--marca);background:var(--marca-claro)}
+.forma-ico{font-size:26px;margin-bottom:6px}.forma-tit{font-size:14px;font-weight:bold;margin-bottom:3px}
+.forma-sub{font-size:11px;color:var(--gris);line-height:1.3}
+
+/* Resumen */
+.resumen-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px}
+.res-card{background:var(--blanco);border-radius:14px;padding:16px;text-align:center;box-shadow:var(--sombra)}
+.res-card.falta{border-top:3px solid var(--rojo)}.res-card.sobra{border-top:3px solid var(--verde)}
+.res-num{font-size:32px;font-weight:bold;line-height:1}
+.res-card.falta .res-num{color:var(--rojo)}.res-card.sobra .res-num{color:var(--verde)}
+.res-lbl{font-size:12px;color:var(--gris);margin-top:4px;font-weight:bold}
+
+/* Lista de historial */
+.orden-card{background:var(--blanco);border:1px solid var(--linea);border-radius:13px;padding:14px;margin-bottom:10px;box-shadow:var(--sombra);cursor:pointer}
+.orden-card:active{transform:scale(.98)}
+.orden-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.orden-num{font-size:15px;font-weight:bold}
+.orden-fecha{font-size:12px;color:var(--gris)}
+.orden-info{font-size:12.5px;color:var(--gris)}
+.orden-tag{display:inline-block;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:6px;margin-left:6px}
+.tag-sistema{background:#E4EEF0;color:#2A6B8A}.tag-manual{background:#EDEAE3;color:#6B5B3A}
+.tag-corregida{background:#FBEEDF;color:var(--naranja)}
+
+/* Toast */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--tinta);color:var(--blanco);
+  padding:12px 20px;border-radius:12px;font-size:14px;z-index:200;box-shadow:var(--sombra-alta);opacity:0;transition:.3s;pointer-events:none}
+.toast.ver{opacity:1}
+.toast.err{background:var(--rojo)}.toast.ok{background:var(--verde)}
+
+/* Loading */
+.cargando{text-align:center;padding:40px 20px;color:var(--gris)}
+.spin{width:36px;height:36px;border:3px solid var(--linea);border-top-color:var(--marca);border-radius:50%;margin:0 auto 14px;animation:g 0.8s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+
+/* Vacío */
+.vacio{text-align:center;padding:40px 24px;color:var(--gris)}
+.vacio-ico{font-size:44px;margin-bottom:12px;opacity:.5}
+.vacio-txt{font-size:14px;line-height:1.5}
+
+/* Setup (pantalla de conexión) */
+.setup{padding:24px 20px}
+.setup input{width:100%;padding:12px 14px;border:2px solid var(--linea);border-radius:11px;font-size:14px;font-family:inherit;margin-bottom:12px}
+.setup input:focus{outline:none;border-color:var(--marca)}
+.setup label{font-size:13px;font-weight:bold;display:block;margin-bottom:6px}
+
+.mini{font-size:11px;color:var(--gris);margin-top:4px;line-height:1.4}
+.badge-ver{position:fixed;bottom:6px;right:8px;font-size:10px;color:var(--gris);z-index:5}
+/* Encabezado de grupo */
+.grupo-head{display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding:0 2px}
+.grupo-head:first-child{margin-top:0}
+.grupo-nombre{font-size:13px;font-weight:bold;color:var(--marca);text-transform:uppercase;letter-spacing:.5px}
+.grupo-linea{flex:1;height:1px;background:var(--linea)}
+.grupo-cont{font-size:11px;color:var(--gris);background:var(--marca-claro);padding:2px 8px;border-radius:10px;font-weight:bold}
+
+/* Modal (ventana propia, reemplaza alert/confirm/prompt) */
+.modal-fondo{position:fixed;inset:0;background:rgba(11,32,39,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:.2s;backdrop-filter:blur(2px)}
+.modal-fondo.ver{opacity:1}
+.modal{background:var(--blanco);border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:var(--sombra-alta);transform:scale(.92);transition:.2s}
+.modal-fondo.ver .modal{transform:scale(1)}
+.modal-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px}
+.modal-tit{font-size:18px;font-weight:bold;text-align:center;margin-bottom:6px}
+.modal-txt{font-size:14px;color:var(--gris);text-align:center;line-height:1.45;margin-bottom:18px}
+.modal-input{width:100%;padding:12px 14px;border:2px solid var(--linea);border-radius:11px;font-size:15px;font-family:inherit;margin-bottom:16px}
+.modal-input:focus{outline:none;border-color:var(--marca)}
+.modal-btns{display:flex;gap:10px}
+.modal-btn{flex:1;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:bold;font-family:inherit;cursor:pointer}
+.modal-btn-si{background:var(--marca);color:#fff}
+.modal-btn-no{background:#EDEAE3;color:var(--gris)}
+.modal-btn-peligro{background:var(--rojo);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-logo">📦</div>
+  <div class="top-nombre">Con<span>teo</span></div>
+  <button class="top-back" id="btnBack" onclick="volver()">‹ Atrás</button>
+</div>
+
+<!-- Se llena dinámicamente -->
+<div id="app"></div>
+
+<div class="toast" id="toast"></div>
+<div class="badge-ver">v0.1</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+/* ══════════════════════════════════════════
+   CONFIGURACIÓN DE SUPABASE
+   ══════════════════════════════════════════ */
+var SUPABASE_URL = 'https://yqqjnrdatsmxbrkruqwg.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcWpucmRhdHNteGJya3J1cXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMzUwMDMsImV4cCI6MjA4NzkxMTAwM30.37iu6wHXTRl9MQ62ib5EJYrzwTDW6OUOMFwgoNmP6SE';
+
+var sb = null;
+var S = { vista:'inicio', vendedor:null, pila:[], user:null };
+
+/* ══════════════════════════════════════════
+   ARRANQUE
+   ══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', function(){
+  if(SUPABASE_ANON_KEY === 'PEGAR_AQUI_LA_ANON_KEY'){
+    pantallaSetup();
+    return;
+  }
+  arrancarConLogin();
+});
+
+function arrancarConLogin(){
+  try{
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }catch(e){
+    toast('Error al conectar: '+e.message, 'err');
+    return;
+  }
+  // ¿Hay sesión guardada?
+  try{
+    var ses = localStorage.getItem('conteo_sesion');
+    if(ses){
+      S.user = JSON.parse(ses);
+      irInicio();
+      return;
+    }
+  }catch(e){}
+  pantallaLogin();
+}
+
+function iniciar(){ arrancarConLogin(); }
+
+/* ══════════════════════════════════════════
+   PANTALLA DE LOGIN
+   ══════════════════════════════════════════ */
+function pantallaLogin(){
+  setBack(false);
+  g('app').innerHTML =
+    '<div class="setup">'+
+      '<div style="text-align:center;margin:20px 0 28px">'+
+        '<div style="width:64px;height:64px;background:var(--marca);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px;transform:rotate(-4deg)">📦</div>'+
+        '<div style="font-size:24px;font-weight:bold">Con<span style="color:var(--marca)">teo</span></div>'+
+        '<div style="font-size:13px;color:var(--gris);margin-top:4px">Control de inventario por cajas</div>'+
+      '</div>'+
+      '<label>Usuario</label>'+
+      '<input id="inUser" placeholder="tu usuario" autocapitalize="off" autocomplete="username">'+
+      '<label>Contraseña</label>'+
+      '<input id="inClave" type="password" placeholder="tu contraseña" autocomplete="current-password">'+
+      '<button class="btn-grande btn-marca" style="margin-top:18px" onclick="hacerLogin()">Entrar</button>'+
+      '<div class="mini" style="text-align:center;margin-top:16px">Solo usuarios autorizados pueden entrar.</div>'+
+    '</div>';
+  // Permitir Enter para entrar
+  var inClave = g('inClave');
+  if(inClave) inClave.addEventListener('keypress', function(e){ if(e.key==='Enter') hacerLogin(); });
+}
+
+async function hacerLogin(){
+  var usuario = g('inUser').value.trim().toLowerCase();
+  var clave = g('inClave').value;
+  if(!usuario || !clave){ toast('Escribí usuario y contraseña','err'); return; }
+  toast('Entrando...');
+  try{
+    var r = await sb.from('conteo_usuarios')
+      .select('id,usuario,clave,nombre,rol,activo')
+      .eq('usuario', usuario).maybeSingle();
+    if(r.error) throw r.error;
+    if(!r.data){ toast('Usuario no encontrado','err'); return; }
+    if(!r.data.activo){ toast('Usuario desactivado','err'); return; }
+    if(r.data.clave !== clave){ toast('Contraseña incorrecta','err'); return; }
+    // Login correcto
+    S.user = { id:r.data.id, usuario:r.data.usuario, nombre:r.data.nombre, rol:r.data.rol };
+    try{ localStorage.setItem('conteo_sesion', JSON.stringify(S.user)); }catch(e){}
+    toast('Bienvenido '+(r.data.nombre||r.data.usuario)+' ✓','ok');
+    setTimeout(irInicio, 600);
+  }catch(e){
+    toast('Error al entrar: '+((e&&e.message)||'revisá la conexión'),'err');
+  }
+}
+
+async function cerrarSesion(){
+  var ok = await modalConfirmar({
+    titulo:'¿Cerrar sesión?',
+    texto:'Vas a salir de tu cuenta.',
+    ico:'👋', colorIco:'#FBEEDF',
+    textoBtnSi:'Salir'
+  });
+  if(!ok) return;
+  try{ localStorage.removeItem('conteo_sesion'); }catch(e){}
+  S.user = null; S.pila = []; S.vendedor = null;
+  pantallaLogin();
+}
+
+/* Pantalla para pegar la clave si no está */
+function pantallaSetup(){
+  document.getElementById('app').innerHTML =
+    '<div class="setup">'+
+      '<div class="eyebrow">Configuración inicial</div>'+
+      '<div class="titulo">Conectar a Supabase</div>'+
+      '<div class="subtitulo">Pegá la clave pública (anon key) de tu proyecto. La encontrás en Supabase → Settings → API → Project API keys → anon/public.</div>'+
+      '<label>Clave anon/public</label>'+
+      '<input id="inKey" placeholder="eyJhbGci...">'+
+      '<div class="mini">Esta clave es pública y segura de usar en el navegador. Se guarda solo en este teléfono.</div>'+
+      '<button class="btn-grande btn-marca" style="margin-top:16px" onclick="guardarKey()">Conectar</button>'+
+    '</div>';
+}
+function guardarKey(){
+  var k = document.getElementById('inKey').value.trim();
+  if(!k){ toast('Pegá la clave primero','err'); return; }
+  try{ localStorage.setItem('conteo_key', k); }catch(e){}
+  SUPABASE_ANON_KEY = k;
+  iniciar();
+}
+// Recuperar clave guardada
+try{
+  var kg = localStorage.getItem('conteo_key');
+  if(kg && SUPABASE_ANON_KEY==='PEGAR_AQUI_LA_ANON_KEY'){ SUPABASE_ANON_KEY = kg; }
+}catch(e){}
+
+/* ══════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════ */
+function g(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* Agrupa productos por su PRIMERA palabra (marca/tipo).
+   Devuelve un array de {grupo, items} ordenado alfabéticamente. */
+function agruparPorPrimera(items, getNombre){
+  var grupos = {};
+  items.forEach(function(it){
+    var nom = getNombre(it) || '';
+    var palabras = nom.trim().split(/\s+/);
+    var clave = (palabras[0] || '?').toUpperCase();
+    if(!grupos[clave]) grupos[clave] = [];
+    grupos[clave].push(it);
+  });
+  // Ordenar los grupos alfabéticamente, y dentro de cada grupo por nombre
+  return Object.keys(grupos).sort().map(function(clave){
+    var arr = grupos[clave].sort(function(a,b){
+      return (getNombre(a)||'').localeCompare(getNombre(b)||'');
+    });
+    return { grupo:clave, items:arr };
+  });
+}
+function toast(msg, tipo){
+  var t = g('toast'); t.textContent = msg;
+  t.className = 'toast ver ' + (tipo||'');
+  setTimeout(function(){ t.className='toast '+(tipo||''); }, 2500);
+}
+function setBack(ver){ g('btnBack').className = 'top-back' + (ver?' ver':''); }
+
+/* ══════════════════════════════════════════
+   MODALES PROPIOS (reemplazan alert/confirm/prompt del navegador)
+   ══════════════════════════════════════════ */
+function modalConfirmar(opts){
+  // opts: {titulo, texto, ico, colorIco, textoBtnSi, peligro, onSi}
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var claseBtn = opts.peligro ? 'modal-btn-peligro' : 'modal-btn-si';
+    fondo.innerHTML =
+      '<div class="modal">'+
+        (opts.ico ? '<div class="modal-ico" style="background:'+(opts.colorIco||'var(--marca-claro)')+'">'+opts.ico+'</div>' : '')+
+        '<div class="modal-tit">'+esc(opts.titulo||'')+'</div>'+
+        (opts.texto ? '<div class="modal-txt">'+esc(opts.texto)+'</div>' : '')+
+        '<div class="modal-btns">'+
+          '<button class="modal-btn modal-btn-no" id="_mNo">Cancelar</button>'+
+          '<button class="modal-btn '+claseBtn+'" id="_mSi">'+esc(opts.textoBtnSi||'Aceptar')+'</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(fondo);
+    requestAnimationFrame(function(){ fondo.classList.add('ver'); });
+    function cerrar(val){
+      fondo.classList.remove('ver');
+      setTimeout(function(){ fondo.remove(); }, 200);
+      resolve(val);
+    }
+    fondo.querySelector('#_mNo').onclick = function(){ cerrar(false); };
+    fondo.querySelector('#_mSi').onclick = function(){ cerrar(true); };
+    fondo.onclick = function(e){ if(e.target===fondo) cerrar(false); };
+  });
+}
+function modalPedirTexto(opts){
+  // opts: {titulo, texto, placeholder, ico, colorIco, textoBtnSi}
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML =
+      '<div class="modal">'+
+        (opts.ico ? '<div class="modal-ico" style="background:'+(opts.colorIco||'var(--marca-claro)')+'">'+opts.ico+'</div>' : '')+
+        '<div class="modal-tit">'+esc(opts.titulo||'')+'</div>'+
+        (opts.texto ? '<div class="modal-txt">'+esc(opts.texto)+'</div>' : '')+
+        '<input class="modal-input" id="_mInput" placeholder="'+esc(opts.placeholder||'')+'" value="'+esc(opts.valor||'')+'">'+
+        '<div class="modal-btns">'+
+          '<button class="modal-btn modal-btn-no" id="_mNo">Cancelar</button>'+
+          '<button class="modal-btn modal-btn-si" id="_mSi">'+esc(opts.textoBtnSi||'Guardar')+'</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(fondo);
+    requestAnimationFrame(function(){ fondo.classList.add('ver'); });
+    var input = fondo.querySelector('#_mInput');
+    setTimeout(function(){ input.focus(); }, 250);
+    function cerrar(val){
+      fondo.classList.remove('ver');
+      setTimeout(function(){ fondo.remove(); }, 200);
+      resolve(val);
+    }
+    fondo.querySelector('#_mNo').onclick = function(){ cerrar(null); };
+    fondo.querySelector('#_mSi').onclick = function(){ cerrar(input.value.trim()); };
+    input.addEventListener('keypress', function(e){ if(e.key==='Enter') cerrar(input.value.trim()); });
+    fondo.onclick = function(e){ if(e.target===fondo) cerrar(null); };
+  });
+}
+function volver(){
+  if(S.pila.length>0){ var v=S.pila.pop(); render(v, true); }
+  else irInicio();
+}
+function ir(vista, guardarPila){
+  if(guardarPila!==false) S.pila.push(S.vista);
+  render(vista);
+}
+function render(vista, esVolver){
+  S.vista = vista;
+  window.scrollTo(0,0);
+  setBack(vista!=='inicio');
+  if(vista==='inicio') vistaInicio();
+  else if(vista==='vendedores-aud') vistaVendedores('auditar');
+  else if(vista==='vendedores-ped') vistaVendedores('pedir');
+  else if(vista==='auditar') vistaAuditar();
+  else if(vista==='pedir') vistaPedir();
+  else if(vista==='historial') vistaHistorial();
+  else if(vista==='catalogo') vistaCatalogo();
+  else if(vista==='gestion-vend') vistaGestionVend();
+  else if(vista==='inv-total') vistaInventarioTotal();
+}
+function irInicio(){ S.pila=[]; S.vendedor=null; render('inicio'); }
+
+/* ══════════════════════════════════════════
+   VISTA: INICIO
+   ══════════════════════════════════════════ */
+function vistaInicio(){
+  var nombreUser = S.user ? (S.user.nombre || S.user.usuario) : '';
+  g('app').innerHTML =
+    '<div class="pantalla activa">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
+        '<div><div class="eyebrow" style="margin-bottom:2px">Golden · control por cajas</div>'+
+        '<div style="font-size:13px;color:var(--gris)">Hola, <b style="color:var(--tinta)">'+esc(nombreUser)+'</b></div></div>'+
+        '<button onclick="cerrarSesion()" style="background:#EDEAE3;border:none;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:bold;color:var(--gris);font-family:inherit;cursor:pointer">Salir</button>'+
+      '</div>'+
+      '<div class="titulo">¿Qué vas a hacer?</div>'+
+      '<div class="subtitulo">El flujo normal: cargar el pedido del vendedor, y al final del día auditar contando físico.</div>'+
+      accionHTML('📝','ico-naranja','Cargar pedido','El vendedor pide productos. Se suman a su inventario.',"ir('vendedores-ped')")+
+      accionHTML('📦','ico-verde','Auditar inventario','Contar físico y ver qué falta o sobra.',"ir('vendedores-aud')")+
+      accionHTML('📊','ico-azul','Inventario total','Ver cuántas cajas hay en todos los vendedores.',"ir('inv-total')")+
+      accionHTML('📋','ico-gris','Historial de cargas','Ver y corregir órdenes de días atrás.',"ir('vendedores-hist')")+
+      accionHTML('📑','ico-naranja','Historial de auditorías','Ver, corregir e imprimir auditorías pasadas.',"ir('vendedores-histaudit')")+
+      accionHTML('🗂️','ico-azul','Catálogo de productos','Ver, agregar y cargar productos.',"ir('catalogo')")+
+      accionHTML('👥','ico-gris','Gestionar vendedores','Agregar o quitar vendedores.',"ir('gestion-vend')")+
+    '</div>';
+}
+function accionHTML(ico,clase,tit,sub,onclick){
+  return '<div class="accion" onclick="'+onclick+'">'+
+    '<div class="accion-ico '+clase+'">'+ico+'</div>'+
+    '<div class="accion-txt"><div class="accion-tit">'+tit+'</div><div class="accion-sub">'+sub+'</div></div>'+
+    '<div class="accion-flecha">›</div></div>';
+}
+
+/* ══════════════════════════════════════════
+   VISTA: ELEGIR VENDEDOR
+   ══════════════════════════════════════════ */
+var _accionTrasVend = 'auditar';
+async function vistaVendedores(accion){
+  _accionTrasVend = accion;
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando vendedores...</div></div>';
+  try{
+    var r = await sb.from('conteo_vendedores').select('id,nombre').eq('activo',true).order('nombre');
+    if(r.error) throw r.error;
+    var vends = r.data||[];
+    // Contar productos por vendedor
+    var inv = await sb.from('conteo_inventario').select('vendedor_id,cajas');
+    var conteos = {};
+    (inv.data||[]).forEach(function(x){
+      if(x.cajas>0){ conteos[x.vendedor_id]=(conteos[x.vendedor_id]||0)+1; }
+    });
+    var titulo = accion==='auditar'?'¿A quién auditás?':(accion==='pedir'?'¿Para quién es el pedido?':'¿Qué vendedor?');
+    var html = '<div class="pantalla activa"><div class="eyebrow">Paso 1</div><div class="titulo">'+titulo+'</div>'+
+      '<div class="subtitulo">Elegí el vendedor de la lista.</div>';
+    if(vends.length===0){
+      html += vacioHTML('👥','No hay vendedores todavía.<br>Agregá vendedores desde el catálogo.');
+    } else {
+      html += '<div class="vend-grid">';
+      vends.forEach(function(v){
+        html += '<div class="vend-card" onclick="elegirVend(\''+v.id+'\',\''+esc(v.nombre).replace(/'/g,"\\'")+'\')">'+
+          '<div class="vend-nom">'+esc(v.nombre)+'</div>'+
+          '<div class="vend-info">'+(conteos[v.id]||0)+' productos</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+function elegirVend(id, nombre){
+  S.vendedor = { id:id, nombre:nombre };
+  if(_accionTrasVend==='auditar') ir('auditar');
+  else if(_accionTrasVend==='pedir') ir('pedir');
+  else if(_accionTrasVend==='hist') ir('historial');
+  else if(_accionTrasVend==='hist-audit') ir('historial-audit');
+}
+// Enrutar los "vendedores-*"
+var _origRender = render;
+render = function(vista, esVolver){
+  if(vista==='vendedores-hist'){ S.vista=vista; setBack(true); window.scrollTo(0,0); vistaVendedores('hist'); return; }
+  if(vista==='vendedores-histaudit'){ S.vista=vista; setBack(true); window.scrollTo(0,0); vistaVendedores('hist-audit'); return; }
+  if(vista==='historial-audit'){ S.vista=vista; setBack(true); window.scrollTo(0,0); vistaHistorialAudit(); return; }
+  _origRender(vista, esVolver);
+};
+
+/* ══════════════════════════════════════════
+   VISTA: AUDITAR
+   ══════════════════════════════════════════ */
+var _auditProds = [];
+async function vistaAuditar(){
+  if(!S.vendedor){ irInicio(); return; }
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando inventario...</div></div>';
+  try{
+    var r = await sb.from('conteo_inventario')
+      .select('cajas,producto_id,conteo_productos(nombre)')
+      .eq('vendedor_id', S.vendedor.id);
+    if(r.error) throw r.error;
+    // Mostrar TODOS los productos asignados al vendedor (incluidos los que están en cero)
+    var items = (r.data||[]);
+    // Ordenar: primero los que tienen stock, luego los de cero, ambos alfabéticos
+    items.sort(function(a,b){
+      var az = a.cajas>0?0:1, bz = b.cajas>0?0:1;
+      if(az!==bz) return az-bz;
+      return (a.conteo_productos.nombre||'').localeCompare(b.conteo_productos.nombre||'');
+    });
+    _auditProds = items.map(function(x){
+      return { prodId:x.producto_id, nombre:x.conteo_productos.nombre, sistema:x.cajas, fisico:x.cajas };
+    });
+    pintarAuditar();
+  }catch(e){ mostrarError(e); }
+}
+function pintarAuditar(){
+  var totalCajas = _auditProds.reduce(function(s,p){ return s+p.sistema; },0);
+  var contados = _auditProds.filter(function(p){ return p._tocado; }).length;
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Auditar · '+esc(S.vendedor.nombre)+'</div>'+
+    '<div class="titulo">Contá el físico</div>'+
+    '<div class="subtitulo">Ajustá cuántas cajas hay de verdad. Las diferencias se calculan solas.</div>'+
+    '<div class="total-bar"><div><div class="total-lbl">En sistema</div><div class="total-num">'+totalCajas+'</div><div class="total-cajas-lbl">cajas</div></div>'+
+    '<div class="total-divisor"></div>'+
+    '<div style="text-align:right"><div class="total-lbl">Productos</div><div class="total-num">'+_auditProds.length+'</div><div class="total-cajas-lbl">a contar</div></div></div>';
+  if(_auditProds.length===0){
+    html += vacioHTML('📦','Este vendedor no tiene inventario.<br>Cargale un pedido primero.');
+    html += '</div>';
+    g('app').innerHTML = html;
+    return;
+  }
+  html += '<input class="busca" placeholder="🔍 Buscar producto..." oninput="filtrarAudit(this.value)">';
+  html += '<div id="listaAudit">';
+  // Separar: los que tienen stock van agrupados arriba; los de cero van al fondo, fuera de grupos
+  var conStock = _auditProds.filter(function(p){ return p.sistema>0; });
+  var enCero = _auditProds.filter(function(p){ return p.sistema===0; });
+  // Grupos solo con los que tienen stock
+  var grupos = agruparPorPrimera(conStock, function(p){ return p.nombre; });
+  grupos.forEach(function(gr){
+    html += '<div class="grupo-head" data-grupo="'+esc(gr.grupo)+'"><span class="grupo-nombre">'+esc(gr.grupo)+'</span><span class="grupo-linea"></span><span class="grupo-cont">'+gr.items.length+'</span></div>';
+    gr.items.forEach(function(p){
+      var i = _auditProds.indexOf(p);
+      html += filaAuditHTML(p,i);
+    });
+  });
+  // Sección de productos en cero, al fondo de todo
+  if(enCero.length>0){
+    enCero.sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
+    html += '<div class="grupo-head grupo-cero" data-grupo="__CERO__" style="margin-top:24px"><span class="grupo-nombre" style="color:var(--gris)">⬇ En cero</span><span class="grupo-linea"></span><span class="grupo-cont" style="background:#EDEAE3;color:var(--gris)">'+enCero.length+'</span></div>';
+    enCero.forEach(function(p){
+      var i = _auditProds.indexOf(p);
+      html += filaAuditHTML(p,i);
+    });
+  }
+  html += '</div>';
+  html += '<button class="btn-grande btn-gris" onclick="imprimirHojaBlanco()">🖨️ Imprimir hoja para contar en papel</button>';
+  html += '<button class="btn-grande" onclick="terminarAudit()">✓ Terminar y ver resultado</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+function filaAuditHTML(p,i){
+  var dif = p.fisico - p.sistema;
+  var clase = dif<0?'dif-falta':(dif>0?'dif-sobra':'');
+  var badge = '';
+  if(dif<0) badge = '<span class="badge-dif badge-falta">⬇ Faltan '+Math.abs(dif)+'</span>';
+  else if(dif>0) badge = '<span class="badge-dif badge-sobra">⬆ Sobran '+dif+'</span>';
+  return '<div class="prod '+clase+'" id="audit-fila-'+i+'" data-nom="'+esc(p.nombre).toLowerCase()+'">'+
+    '<div class="prod-top"><div class="prod-nom">'+esc(p.nombre)+'</div>'+
+    '<div class="prod-sis">Sistema<b>'+p.sistema+'</b></div></div>'+
+    '<div class="conteo-fila"><span class="conteo-lbl">Físico</span>'+
+    '<div class="stepper">'+
+      '<button class="step-btn" onclick="stepAudit('+i+',-1)">−</button>'+
+      '<input class="step-input" value="'+p.fisico+'" inputmode="numeric" onchange="setAudit('+i+',this.value)" onfocus="this.select()">'+
+      '<button class="step-btn" onclick="stepAudit('+i+',1)">+</button>'+
+    '</div></div>'+badge+'</div>';
+}
+function stepAudit(i,d){
+  _auditProds[i].fisico = Math.max(0, _auditProds[i].fisico + d);
+  _auditProds[i]._tocado = true;
+  actualizarFilaAudit(i);
+}
+function setAudit(i,val){
+  _auditProds[i].fisico = Math.max(0, parseInt(val)||0);
+  _auditProds[i]._tocado = true;
+  actualizarFilaAudit(i);
+}
+function actualizarFilaAudit(i){
+  var vieja = g('audit-fila-'+i);
+  if(!vieja) return;
+  var nueva = document.createElement('div');
+  nueva.innerHTML = filaAuditHTML(_auditProds[i], i);
+  vieja.replaceWith(nueva.firstChild);
+}
+function filtrarAudit(q){
+  q = q.toLowerCase().trim();
+  var lista = g('listaAudit');
+  Array.from(lista.children).forEach(function(el){
+    if(el.classList.contains('grupo-head')){
+      // Los encabezados de grupo siempre visibles (o se podrían ocultar si su grupo queda vacío)
+      el.style.display = q==='' ? '' : 'none';
+      return;
+    }
+    el.style.display = el.getAttribute('data-nom').indexOf(q)>=0 ? '' : 'none';
+  });
+}
+async function terminarAudit(){
+  var faltantes = 0, sobrantes = 0, detalle = [];
+  _auditProds.forEach(function(p){
+    var dif = p.fisico - p.sistema;
+    if(dif<0) faltantes += Math.abs(dif);
+    if(dif>0) sobrantes += dif;
+    if(dif!==0) detalle.push({ nombre:p.nombre, sistema:p.sistema, fisico:p.fisico, dif:dif, prodId:p.prodId });
+  });
+  S._auditResult = { faltantes:faltantes, sobrantes:sobrantes, detalle:detalle };
+  ir('resultado-audit');
+}
+function imprimirHojaBlanco(){
+  var vnom = S.vendedor ? S.vendedor.nombre : '';
+  var fecha = new Date().toLocaleDateString('es-SV');
+  // Agrupar por primera palabra, solo con stock (los de cero al final aparte)
+  var conStock = _auditProds.filter(function(p){ return p.sistema>0; });
+  var grupos = agruparPorPrimera(conStock, function(p){ return p.nombre; });
+  var filas = '';
+  grupos.forEach(function(gr){
+    filas += '<tr class="grupo-row"><td colspan="3">'+esc(gr.grupo)+'</td></tr>';
+    gr.items.forEach(function(p){
+      filas += '<tr><td class="c-prod">'+esc(p.nombre)+'</td>'+
+        '<td class="c-sis">'+p.sistema+'</td>'+
+        '<td class="c-fis"></td></tr>';
+    });
+  });
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de conteo</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:12px}'+
+    '.head{text-align:center;border-bottom:3px solid #000;padding-bottom:10px;margin-bottom:12px}'+
+    '.head h1{font-size:19px;margin-bottom:4px}'+
+    '.meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px}.meta b{font-weight:bold}'+
+    'table{width:100%;border-collapse:collapse}'+
+    'th{background:#0E7C6B;color:#fff;padding:7px 6px;text-align:left;font-size:11px}'+
+    'td{padding:6px;border-bottom:1px solid #ccc}'+
+    '.c-sis{width:70px;text-align:center;font-weight:bold}'+
+    '.c-fis{width:90px;border-left:2px solid #000;background:#fafafa}'+
+    'th.c-fis{color:#fff;background:#0E7C6B;text-align:center}'+
+    'th.c-sis{text-align:center}'+
+    '.grupo-row td{background:#E3F0ED;font-weight:bold;color:#0E7C6B;font-size:11px;text-transform:uppercase;padding:5px 6px}'+
+    '@media print{body{padding:10px}}</style></head><body>'+
+    '<div class="head"><h1>HOJA DE CONTEO</h1><div>Conteo · Golden</div></div>'+
+    '<div class="meta"><div><b>Vendedor:</b> '+esc(vnom)+'</div><div><b>Fecha:</b> '+fecha+'</div></div>'+
+    '<table><thead><tr><th>Producto</th><th class="c-sis">Sistema</th><th class="c-fis">Físico</th></tr></thead>'+
+    '<tbody>'+filas+'</tbody></table>'+
+    '<p style="margin-top:14px;font-size:11px;color:#666">Anotá en la columna "Físico" cuántas cajas contaste. Luego pasalo a la app.</p>'+
+    '</body></html>';
+  var v = window.open('','_blank');
+  if(!v){ toast('Permití las ventanas emergentes para imprimir','err'); return; }
+  v.document.write(doc); v.document.close();
+  setTimeout(function(){ v.print(); }, 400);
+}
+// enrutar resultado
+var _r2 = render;
+render = function(vista, esVolver){
+  if(vista==='resultado-audit'){ S.vista=vista; setBack(true); window.scrollTo(0,0); vistaResultadoAudit(); return; }
+  _r2(vista, esVolver);
+};
+
+function vistaResultadoAudit(){
+  var res = S._auditResult;
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Resultado · '+esc(S.vendedor.nombre)+'</div>'+
+    '<div class="titulo">Auditoría lista</div>'+
+    '<div class="subtitulo">Esto es lo que no cuadró. Revisá y guardá para ajustar el inventario.</div>'+
+    '<div class="resumen-grid">'+
+    '<div class="res-card falta"><div class="res-num">'+res.faltantes+'</div><div class="res-lbl">CAJAS FALTANTES</div></div>'+
+    '<div class="res-card sobra"><div class="res-num">'+res.sobrantes+'</div><div class="res-lbl">CAJAS SOBRANTES</div></div>'+
+    '</div>';
+  if(res.detalle.length===0){
+    html += vacioHTML('✅','Todo cuadra perfecto.<br>No hubo diferencias.');
+  }else{
+    res.detalle.forEach(function(d){
+      var clase = d.dif<0?'dif-falta':'dif-sobra';
+      var badge = d.dif<0?'<span class="badge-dif badge-falta">Faltan '+Math.abs(d.dif)+'</span>':'<span class="badge-dif badge-sobra">Sobran '+d.dif+'</span>';
+      html += '<div class="prod '+clase+'"><div class="prod-top"><div class="prod-nom">'+esc(d.nombre)+'</div>'+badge+'</div>'+
+        '<div style="font-size:12px;color:var(--gris)">Sistema: '+d.sistema+' · Físico: '+d.fisico+'</div></div>';
+    });
+  }
+  html += '<button class="btn-grande" onclick="imprimirResultadoAudit()">🖨️ Imprimir auditoría</button>';
+  html += '<button class="btn-grande btn-marca" onclick="guardarAudit()">✓ Guardar y ajustar inventario</button>';
+  html += '<button class="btn-grande btn-gris" onclick="volver()">Volver a contar</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+async function guardarAudit(){
+  var res = S._auditResult;
+  toast('Guardando auditoría...');
+  try{
+    // 1. Ajustar el inventario de cada producto con diferencia
+    for(var i=0;i<res.detalle.length;i++){
+      var d = res.detalle[i];
+      var up = await sb.from('conteo_inventario').update({cajas:d.fisico})
+        .eq('vendedor_id', S.vendedor.id).eq('producto_id', d.prodId);
+      if(up.error) throw up.error;
+    }
+    // 2. Guardar el registro de la auditoría
+    var ins = await sb.from('conteo_auditorias').insert([{
+      vendedor_id: S.vendedor.id,
+      faltantes: res.faltantes,
+      sobrantes: res.sobrantes,
+      detalle: res.detalle
+    }]);
+    if(ins.error) throw ins.error;
+    toast('Auditoría guardada ✓','ok');
+    setTimeout(irInicio, 1200);
+  }catch(e){ mostrarError(e); }
+}
+
+function imprimirResultadoAudit(){
+  var res = S._auditResult;
+  // SOLO productos con diferencia (los que cuadran o están en cero no se muestran)
+  var conDif = res.detalle.filter(function(d){ return (d.fisico - d.sistema) !== 0; });
+  var fecha = new Date().toLocaleDateString('es-SV');
+  var hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+  var vnom = S.vendedor ? S.vendedor.nombre : '';
+  var filas = '';
+  conDif.forEach(function(d){
+    var dif = d.fisico - d.sistema;
+    var difTxt = dif<0?('-'+Math.abs(dif)):('+'+dif);
+    var color = dif<0?'#C4432B':'#2E8B57';
+    filas += '<tr><td>'+esc(d.nombre)+'</td>'+
+      '<td class="c-num">'+d.sistema+'</td>'+
+      '<td class="c-num">'+d.fisico+'</td>'+
+      '<td class="c-num" style="color:'+color+';font-weight:bold">'+difTxt+'</td></tr>';
+  });
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Auditoría</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:13px}'+
+    '.head{text-align:center;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px}'+
+    '.head h1{font-size:20px;margin-bottom:4px}'+
+    '.meta{display:flex;justify-content:space-between;margin-bottom:14px}.meta b{font-weight:bold}'+
+    '.resumen{display:flex;gap:20px;margin-bottom:16px}'+
+    '.rbox{flex:1;text-align:center;padding:12px;border:2px solid #ccc;border-radius:8px}'+
+    '.rbox .n{font-size:26px;font-weight:bold}.rbox .l{font-size:11px;color:#666}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px}'+
+    'th{background:#0E7C6B;color:#fff;padding:8px 6px;text-align:left;font-size:12px}'+
+    'td{padding:7px 6px;border-bottom:1px solid #ccc;font-size:12px}'+
+    '.c-num{width:70px;text-align:center;font-weight:bold}th.c-num{color:#fff}'+
+    '.firmas{display:flex;justify-content:space-around;margin-top:50px;gap:40px}'+
+    '.firma{flex:1;text-align:center}.firma .linea{border-top:2px solid #000;margin-bottom:6px;padding-top:44px}'+
+    '.firma .lbl{font-size:12px}'+
+    '@media print{body{padding:10px}}</style></head><body>'+
+    '<div class="head"><h1>REPORTE DE AUDITORÍA</h1><div>Conteo · Golden</div></div>'+
+    '<div class="meta"><div><b>Vendedor:</b> '+esc(vnom)+'</div><div>'+fecha+' · '+hora+'</div></div>'+
+    '<div class="resumen">'+
+      '<div class="rbox"><div class="n" style="color:#C4432B">'+res.faltantes+'</div><div class="l">CAJAS FALTANTES</div></div>'+
+      '<div class="rbox"><div class="n" style="color:#2E8B57">'+res.sobrantes+'</div><div class="l">CAJAS SOBRANTES</div></div>'+
+    '</div>';
+  if(conDif.length>0){
+    doc += '<p style="font-size:12px;color:#666;margin-bottom:8px">Solo se muestran los productos con diferencia:</p>'+
+      '<table><thead><tr><th>Producto</th><th class="c-num">Sistema</th><th class="c-num">Físico</th><th class="c-num">Dif.</th></tr></thead><tbody>'+filas+'</tbody></table>';
+  }else{
+    doc += '<p style="text-align:center;padding:30px;color:#2E8B57;font-weight:bold">✓ Todo cuadró perfecto. No hubo diferencias.</p>';
+  }
+  doc += '<div class="firmas"><div class="firma"><div class="linea"></div><div class="lbl">Auditó</div></div>'+
+    '<div class="firma"><div class="linea"></div><div class="lbl">Vendedor · '+esc(vnom)+'</div></div></div>'+
+    '</body></html>';
+  var v = window.open('','_blank');
+  if(!v){ toast('Permití las ventanas emergentes para imprimir','err'); return; }
+  v.document.write(doc); v.document.close();
+  setTimeout(function(){ v.print(); }, 400);
+}
+
+/* ══════════════════════════════════════════
+   VISTA: PEDIR (cargar pedido)
+   ══════════════════════════════════════════ */
+var _pedProds = [];        // catálogo completo
+var _pedSel = {};          // {prodId: cajas}
+var _pedForma = 'manual';
+async function vistaPedir(){
+  if(!S.vendedor){ irInicio(); return; }
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando productos...</div></div>';
+  try{
+    var r = await sb.from('conteo_productos').select('id,nombre').eq('activo',true).order('nombre');
+    if(r.error) throw r.error;
+    _pedProds = r.data||[];
+    _pedSel = {};
+    pintarPedir();
+  }catch(e){ mostrarError(e); }
+}
+function pintarPedir(){
+  var nSel = Object.keys(_pedSel).filter(function(k){return _pedSel[k]>0;}).length;
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Pedido · '+esc(S.vendedor.nombre)+'</div>'+
+    '<div class="titulo">Cargar pedido</div>'+
+    '<div class="subtitulo">Elegí cómo se hace y agregá las cajas de cada producto.</div>'+
+    '<div class="dos-formas">'+
+      '<div class="forma '+(_pedForma==='sistema'?'sel':'')+'" onclick="setForma(\'sistema\')"><div class="forma-ico">📱</div><div class="forma-tit">Por sistema</div><div class="forma-sub">El vendedor arma su orden</div></div>'+
+      '<div class="forma '+(_pedForma==='manual'?'sel':'')+'" onclick="setForma(\'manual\')"><div class="forma-ico">✍️</div><div class="forma-tit">Manual</div><div class="forma-sub">Cargás lo del papel</div></div>'+
+    '</div>';
+  if(_pedProds.length===0){
+    html += vacioHTML('🗂️','No hay productos en el catálogo.<br>Cargá productos primero.');
+    html += '</div>'; g('app').innerHTML=html; return;
+  }
+  html += '<input class="busca" placeholder="🔍 Buscar producto para agregar..." oninput="filtrarPed(this.value)">';
+  html += '<div id="listaPed">';
+  // Agrupar por primera palabra
+  var grupos = agruparPorPrimera(_pedProds, function(p){ return p.nombre; });
+  grupos.forEach(function(gr){
+    html += '<div class="grupo-head" data-grupo="'+esc(gr.grupo)+'"><span class="grupo-nombre">'+esc(gr.grupo)+'</span><span class="grupo-linea"></span><span class="grupo-cont">'+gr.items.length+'</span></div>';
+    gr.items.forEach(function(p){
+      var idx = _pedProds.indexOf(p);
+      html += filaPedHTML(p,idx);
+    });
+  });
+  html += '</div>';
+  html += '<button class="btn-grande" onclick="prepararHoja()">Preparar hoja ('+nSel+' productos) →</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+function filaPedHTML(p,i){
+  var cajas = _pedSel[p.id]||0;
+  return '<div class="prod" id="ped-fila-'+i+'" data-nom="'+esc(p.nombre).toLowerCase()+'">'+
+    '<div class="prod-top"><div class="prod-nom">'+esc(p.nombre)+'</div></div>'+
+    '<div class="conteo-fila"><span class="conteo-lbl">Cajas</span>'+
+    '<div class="stepper">'+
+      '<button class="step-btn" onclick="stepPed(\''+p.id+'\',-1,'+i+')">−</button>'+
+      '<input class="step-input" value="'+cajas+'" inputmode="numeric" onchange="setPed(\''+p.id+'\',this.value,'+i+')" onfocus="this.select()">'+
+      '<button class="step-btn" onclick="stepPed(\''+p.id+'\',1,'+i+')">+</button>'+
+    '</div></div></div>';
+}
+function setForma(f){ _pedForma=f; pintarPedir(); }
+function stepPed(id,d,i){
+  _pedSel[id] = Math.max(0,(_pedSel[id]||0)+d);
+  actualizarFilaPed(i,id);
+  actualizarBotonPed();
+}
+function setPed(id,val,i){
+  _pedSel[id] = Math.max(0,parseInt(val)||0);
+  actualizarFilaPed(i,id);
+  actualizarBotonPed();
+}
+function actualizarFilaPed(i,id){
+  var vieja = g('ped-fila-'+i);
+  if(!vieja) return;
+  var idx = _pedProds.findIndex(function(p){return p.id===id;});
+  var nueva=document.createElement('div');
+  nueva.innerHTML=filaPedHTML(_pedProds[idx],idx);
+  vieja.replaceWith(nueva.firstChild);
+}
+function actualizarBotonPed(){
+  var nSel=Object.keys(_pedSel).filter(function(k){return _pedSel[k]>0;}).length;
+  var btn=document.querySelector('.pantalla .btn-grande');
+  if(btn) btn.innerHTML='Preparar hoja ('+nSel+' productos) →';
+}
+function filtrarPed(q){
+  q=q.toLowerCase().trim();
+  var lista=g('listaPed');
+  Array.from(lista.children).forEach(function(el){
+    if(el.classList.contains('grupo-head')){
+      el.style.display = q==='' ? '' : 'none';
+      return;
+    }
+    el.style.display=el.getAttribute('data-nom').indexOf(q)>=0?'':'none';
+  });
+}
+function prepararHoja(){
+  var sel = _pedProds.filter(function(p){ return _pedSel[p.id]>0; })
+    .map(function(p){ return {id:p.id, nombre:p.nombre, cajas:_pedSel[p.id]}; });
+  if(sel.length===0){ toast('Agregá al menos un producto','err'); return; }
+  S._pedidoActual = { items:sel, forma:_pedForma };
+  ir('hoja-prep');
+}
+var _r3 = render;
+render = function(vista, esVolver){
+  if(vista==='hoja-prep'){ S.vista=vista; setBack(true); window.scrollTo(0,0); vistaHojaPrep(); return; }
+  _r3(vista, esVolver);
+};
+
+function vistaHojaPrep(){
+  var ped = S._pedidoActual;
+  var total = ped.items.reduce(function(s,x){return s+x.cajas;},0);
+  var fecha = new Date().toLocaleDateString('es-SV');
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Hoja de preparación</div>'+
+    '<div class="titulo">Revisá el pedido</div>'+
+    '<div class="subtitulo">Este es el comprobante de lo que se entrega. Se puede imprimir y firmar.</div>'+
+    '<div style="background:var(--blanco);border:1px solid var(--linea);border-radius:14px;padding:18px;box-shadow:var(--sombra);margin-bottom:14px">'+
+      '<div style="text-align:center;border-bottom:2px solid var(--tinta);padding-bottom:12px;margin-bottom:12px">'+
+        '<div style="font-size:17px;font-weight:bold">HOJA DE PREPARACIÓN</div>'+
+        '<div style="font-size:12px;color:var(--gris);margin-top:3px">'+esc(S.vendedor.nombre)+' · '+fecha+' · '+(ped.forma==='sistema'?'Por sistema':'Manual')+'</div>'+
+      '</div>';
+  ped.items.forEach(function(x){
+    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dotted var(--linea);font-size:13px"><span>'+esc(x.nombre)+'</span><b>'+x.cajas+' cajas</b></div>';
+  });
+  html += '<div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:bold;color:var(--marca)"><span>TOTAL</span><span>'+total+' cajas</span></div>';
+  html += '</div>';
+  html += '<button class="btn-grande" onclick="imprimirHoja()">🖨️ Imprimir hoja para preparar</button>';
+  html += '<button class="btn-grande btn-marca" onclick="guardarPedido()">✓ Confirmar y sumar al inventario</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+function imprimirHoja(){
+  var ped = S._pedidoActual;
+  var total = ped.items.reduce(function(s,x){return s+x.cajas;},0);
+  var fecha = new Date().toLocaleDateString('es-SV');
+  var hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+  var filas = '';
+  ped.items.forEach(function(x,i){
+    filas += '<tr>'+
+      '<td class="c-num">'+(i+1)+'</td>'+
+      '<td class="c-prod">'+esc(x.nombre)+'</td>'+
+      '<td class="c-caja">'+x.cajas+'</td>'+
+      '<td class="c-check"></td>'+
+      '</tr>';
+  });
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de preparación</title>'+
+    '<style>'+
+    '*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:13px}'+
+    '.head{text-align:center;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px}'+
+    '.head h1{font-size:20px;margin-bottom:4px}'+
+    '.head .info{font-size:13px;color:#333}'+
+    '.meta{display:flex;justify-content:space-between;margin-bottom:14px;font-size:13px}'+
+    '.meta b{font-weight:bold}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px}'+
+    'th{background:#0E7C6B;color:#fff;padding:8px 6px;text-align:left;font-size:12px}'+
+    'td{padding:7px 6px;border-bottom:1px solid #ccc;font-size:12px}'+
+    '.c-num{width:32px;text-align:center;color:#666}'+
+    '.c-caja{width:70px;text-align:center;font-weight:bold;font-size:14px}'+
+    '.c-check{width:50px;text-align:center;border-left:1px dashed #999}'+
+    'th.c-check{color:#fff}'+
+    '.total-row td{border-top:2px solid #000;font-weight:bold;font-size:15px;padding-top:10px}'+
+    '.firmas{display:flex;justify-content:space-around;margin-top:50px;gap:40px}'+
+    '.firma{flex:1;text-align:center}'+
+    '.firma .linea{border-top:2px solid #000;margin-bottom:6px;padding-top:44px}'+
+    '.firma .lbl{font-size:12px;color:#333}'+
+    '.pie{margin-top:30px;text-align:center;font-size:11px;color:#888}'+
+    '@media print{body{padding:10px}}'+
+    '</style></head><body>'+
+    '<div class="head"><h1>HOJA DE PREPARACIÓN</h1>'+
+      '<div class="info">Conteo · Golden</div></div>'+
+    '<div class="meta">'+
+      '<div><b>Vendedor:</b> '+esc(S.vendedor.nombre)+'</div>'+
+      '<div><b>Fecha:</b> '+fecha+' · '+hora+'</div>'+
+    '</div>'+
+    '<table>'+
+      '<thead><tr><th class="c-num">#</th><th>Producto</th><th class="c-caja">Cajas</th><th class="c-check">✓</th></tr></thead>'+
+      '<tbody>'+filas+
+        '<tr class="total-row"><td></td><td>TOTAL</td><td class="c-caja">'+total+'</td><td></td></tr>'+
+      '</tbody>'+
+    '</table>'+
+    '<div class="firmas">'+
+      '<div class="firma"><div class="linea"></div><div class="lbl">Preparó</div></div>'+
+      '<div class="firma"><div class="linea"></div><div class="lbl">Recibió · '+esc(S.vendedor.nombre)+'</div></div>'+
+    '</div>'+
+    '<div class="pie">Columna ✓ para marcar cada producto al prepararlo</div>'+
+    '</body></html>';
+  var v = window.open('', '_blank');
+  if(!v){ toast('Permití las ventanas emergentes para imprimir','err'); return; }
+  v.document.write(doc);
+  v.document.close();
+  setTimeout(function(){ v.print(); }, 400);
+}
+async function guardarPedido(){
+  var ped = S._pedidoActual;
+  toast('Guardando pedido...');
+  try{
+    // 1. Crear la orden
+    var ord = await sb.from('conteo_ordenes').insert([{
+      vendedor_id: S.vendedor.id, forma: ped.forma, creado_por:'Cesar'
+    }]).select().single();
+    if(ord.error) throw ord.error;
+    var ordenId = ord.data.id;
+    // 2. Crear los items de la orden
+    var items = ped.items.map(function(x){ return {orden_id:ordenId, producto_id:x.id, cajas:x.cajas}; });
+    var insItems = await sb.from('conteo_orden_items').insert(items);
+    if(insItems.error) throw insItems.error;
+    // 3. Sumar al inventario (leer actual, sumar)
+    for(var i=0;i<ped.items.length;i++){
+      var x = ped.items[i];
+      var actual = await sb.from('conteo_inventario').select('id,cajas')
+        .eq('vendedor_id',S.vendedor.id).eq('producto_id',x.id).maybeSingle();
+      if(actual.data){
+        await sb.from('conteo_inventario').update({cajas:actual.data.cajas + x.cajas}).eq('id',actual.data.id);
+      }else{
+        await sb.from('conteo_inventario').insert([{vendedor_id:S.vendedor.id, producto_id:x.id, cajas:x.cajas}]);
+      }
+    }
+    toast('Pedido guardado ✓','ok');
+    setTimeout(irInicio, 1200);
+  }catch(e){ mostrarError(e); }
+}
+
+/* ══════════════════════════════════════════
+   VISTA: INVENTARIO TOTAL (todos los vendedores)
+   ══════════════════════════════════════════ */
+async function vistaInventarioTotal(){
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Sumando inventario...</div></div>';
+  try{
+    var r = await sb.from('conteo_inventario')
+      .select('cajas,vendedor_id,conteo_vendedores(nombre)')
+      .gt('cajas',0);
+    if(r.error) throw r.error;
+    var items = r.data||[];
+    var porVend = {};
+    var totalCajas = 0;
+    items.forEach(function(x){
+      var nom = x.conteo_vendedores ? x.conteo_vendedores.nombre : '?';
+      if(!porVend[nom]) porVend[nom] = {cajas:0, prods:0};
+      porVend[nom].cajas += x.cajas;
+      porVend[nom].prods += 1;
+      totalCajas += x.cajas;
+    });
+    var lista = Object.keys(porVend).map(function(nom){
+      return {nombre:nom, cajas:porVend[nom].cajas, prods:porVend[nom].prods};
+    }).sort(function(a,b){ return b.cajas - a.cajas; });
+
+    var html = '<div class="pantalla activa">'+
+      '<div class="eyebrow">Resumen general</div>'+
+      '<div class="titulo">Inventario total</div>'+
+      '<div class="subtitulo">Todo lo que hay en la calle, sumando todos los vendedores.</div>'+
+      '<div class="total-bar"><div><div class="total-lbl">Total en ruta</div><div class="total-num">'+totalCajas+'</div><div class="total-cajas-lbl">cajas</div></div>'+
+      '<div class="total-divisor"></div>'+
+      '<div style="text-align:right"><div class="total-lbl">Vendedores</div><div class="total-num">'+lista.length+'</div><div class="total-cajas-lbl">con producto</div></div></div>';
+    if(lista.length===0){
+      html += vacioHTML('📦','Todavía no hay inventario cargado.<br>Cargá pedidos a los vendedores.');
+    }else{
+      html += '<div style="font-size:13px;font-weight:bold;color:var(--gris);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Por vendedor</div>';
+      lista.forEach(function(v){
+        html += '<div class="prod"><div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<div><div class="prod-nom" style="margin-bottom:2px">'+esc(v.nombre)+'</div>'+
+          '<div style="font-size:12px;color:var(--gris)">'+v.prods+' productos distintos</div></div>'+
+          '<div style="text-align:right"><div style="font-size:22px;font-weight:bold;color:var(--marca)">'+v.cajas+'</div>'+
+          '<div style="font-size:11px;color:var(--gris)">cajas</div></div>'+
+          '</div></div>';
+      });
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+
+/* ══════════════════════════════════════════
+   VISTA: HISTORIAL DE CARGAS
+   ══════════════════════════════════════════ */
+async function vistaHistorial(){
+  if(!S.vendedor){ irInicio(); return; }
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando historial...</div></div>';
+  try{
+    var r = await sb.from('conteo_ordenes')
+      .select('id,numero,fecha,forma,estado,firmada')
+      .eq('vendedor_id',S.vendedor.id).order('fecha',{ascending:false});
+    if(r.error) throw r.error;
+    var ordenes = r.data||[];
+    var html = '<div class="pantalla activa">'+
+      '<div class="eyebrow">Historial · '+esc(S.vendedor.nombre)+'</div>'+
+      '<div class="titulo">Cargas anteriores</div>'+
+      '<div class="subtitulo">Tocá una orden para verla o corregirla.</div>';
+    if(ordenes.length===0){
+      html += vacioHTML('📋','No hay cargas todavía para este vendedor.');
+    }else{
+      ordenes.forEach(function(o){
+        var fecha = new Date(o.fecha).toLocaleDateString('es-SV',{day:'2-digit',month:'2-digit',year:'numeric'});
+        var hora = new Date(o.fecha).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+        var tag = o.forma==='sistema'?'<span class="orden-tag tag-sistema">Sistema</span>':'<span class="orden-tag tag-manual">Manual</span>';
+        if(o.estado==='corregida') tag += '<span class="orden-tag tag-corregida">Corregida</span>';
+        html += '<div class="orden-card" onclick="verOrden(\''+o.id+'\')">'+
+          '<div class="orden-top"><div class="orden-num">Orden #'+o.numero+tag+'</div><div class="orden-fecha">'+fecha+'</div></div>'+
+          '<div class="orden-info">'+hora+' hrs · tocá para ver detalle</div></div>';
+      });
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+function verOrden(id){
+  toast('Ver/corregir orden — próximo paso');
+  // La corrección de órdenes la construyo en la siguiente parte
+}
+
+/* ══════════════════════════════════════════
+   VISTA: HISTORIAL DE AUDITORÍAS (por vendedor)
+   ══════════════════════════════════════════ */
+async function vistaHistorialAudit(){
+  if(!S.vendedor){ irInicio(); return; }
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando auditorías...</div></div>';
+  try{
+    var r = await sb.from('conteo_auditorias')
+      .select('id,numero,fecha,faltantes,sobrantes,detalle')
+      .eq('vendedor_id',S.vendedor.id).order('fecha',{ascending:false});
+    if(r.error) throw r.error;
+    var auds = r.data||[];
+    var html = '<div class="pantalla activa">'+
+      '<div class="eyebrow">Auditorías · '+esc(S.vendedor.nombre)+'</div>'+
+      '<div class="titulo">Historial de auditorías</div>'+
+      '<div class="subtitulo">Tocá una para verla, corregirla o imprimirla.</div>';
+    if(auds.length===0){
+      html += vacioHTML('📦','No hay auditorías todavía para este vendedor.');
+    }else{
+      auds.forEach(function(a){
+        var fecha = new Date(a.fecha).toLocaleDateString('es-SV',{day:'2-digit',month:'2-digit',year:'numeric'});
+        var hora = new Date(a.fecha).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+        html += '<div class="orden-card" onclick="verAuditoria(\''+a.id+'\')">'+
+          '<div class="orden-top"><div class="orden-num">Auditoría #'+a.numero+'</div><div class="orden-fecha">'+fecha+'</div></div>'+
+          '<div class="orden-info">'+hora+' hrs · '+
+          '<span style="color:var(--rojo);font-weight:bold">'+a.faltantes+' faltan</span> · '+
+          '<span style="color:var(--verde);font-weight:bold">'+a.sobrantes+' sobran</span></div></div>';
+      });
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+
+var _auditActual = null;
+async function verAuditoria(id){
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Abriendo auditoría...</div></div>';
+  try{
+    var r = await sb.from('conteo_auditorias').select('*').eq('id',id).single();
+    if(r.error) throw r.error;
+    _auditActual = r.data;
+    S.pila.push(S.vista); S.vista='ver-auditoria'; setBack(true);
+    pintarVerAuditoria();
+  }catch(e){ mostrarError(e); }
+}
+function pintarVerAuditoria(){
+  var a = _auditActual;
+  var det = a.detalle||[];
+  var fecha = new Date(a.fecha).toLocaleDateString('es-SV');
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Auditoría #'+a.numero+' · '+fecha+'</div>'+
+    '<div class="titulo">Detalle de auditoría</div>'+
+    '<div class="subtitulo">Podés corregir los números. Al guardar, el inventario se reajusta.</div>'+
+    '<div class="resumen-grid">'+
+    '<div class="res-card falta"><div class="res-num">'+a.faltantes+'</div><div class="res-lbl">CAJAS FALTANTES</div></div>'+
+    '<div class="res-card sobra"><div class="res-num">'+a.sobrantes+'</div><div class="res-lbl">CAJAS SOBRANTES</div></div>'+
+    '</div>';
+  if(det.length===0){
+    html += vacioHTML('✅','Esta auditoría no tuvo diferencias.');
+  }else{
+    det.forEach(function(d,i){
+      html += '<div class="prod" data-i="'+i+'">'+
+        '<div class="prod-nom" style="margin-bottom:10px">'+esc(d.nombre)+'</div>'+
+        '<div style="display:flex;gap:10px">'+
+          '<div style="flex:1"><div style="font-size:11px;color:var(--gris);margin-bottom:4px;font-weight:bold">SISTEMA</div>'+
+            '<input class="edit-num" style="width:100%;padding:8px;border:2px solid var(--linea);border-radius:9px;font-size:16px;font-weight:bold;text-align:center;font-family:inherit" value="'+d.sistema+'" inputmode="numeric" onchange="editAudit('+i+',\'sistema\',this.value)" onfocus="this.select()"></div>'+
+          '<div style="flex:1"><div style="font-size:11px;color:var(--gris);margin-bottom:4px;font-weight:bold">FÍSICO</div>'+
+            '<input class="edit-num" style="width:100%;padding:8px;border:2px solid var(--linea);border-radius:9px;font-size:16px;font-weight:bold;text-align:center;font-family:inherit" value="'+d.fisico+'" inputmode="numeric" onchange="editAudit('+i+',\'fisico\',this.value)" onfocus="this.select()"></div>'+
+        '</div>'+
+        '<div class="dif-txt" style="font-size:12px;color:var(--gris);margin-top:8px">'+difTexto(d)+'</div>'+
+        '</div>';
+    });
+  }
+  html += '<button class="btn-grande" onclick="imprimirAuditoria()">🖨️ Imprimir auditoría</button>';
+  html += '<button class="btn-grande btn-marca" onclick="guardarCorreccionAudit()">✓ Guardar cambios</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+function difTexto(d){
+  var dif = d.fisico - d.sistema;
+  if(dif<0) return '⬇ Faltan '+Math.abs(dif)+' cajas';
+  if(dif>0) return '⬆ Sobran '+dif+' cajas';
+  return '✓ Cuadra';
+}
+function editAudit(i, campo, val){
+  _auditActual.detalle[i][campo] = Math.max(0, parseInt(val)||0);
+  // Actualizar el texto de diferencia de esa fila
+  var fila = document.querySelector('.prod[data-i="'+i+'"] .dif-txt');
+  if(fila) fila.textContent = difTexto(_auditActual.detalle[i]);
+}
+async function guardarCorreccionAudit(){
+  var a = _auditActual;
+  toast('Guardando cambios...');
+  try{
+    // Recalcular faltantes/sobrantes
+    var faltantes=0, sobrantes=0;
+    a.detalle.forEach(function(d){
+      var dif = d.fisico - d.sistema;
+      if(dif<0) faltantes += Math.abs(dif);
+      if(dif>0) sobrantes += dif;
+    });
+    // 1. Actualizar la auditoría
+    var up = await sb.from('conteo_auditorias').update({
+      faltantes:faltantes, sobrantes:sobrantes, detalle:a.detalle
+    }).eq('id',a.id);
+    if(up.error) throw up.error;
+    // 2. Reajustar el inventario: poner el físico corregido de cada producto
+    for(var i=0;i<a.detalle.length;i++){
+      var d = a.detalle[i];
+      if(!d.prodId) continue;
+      var upInv = await sb.from('conteo_inventario').update({cajas:d.fisico})
+        .eq('vendedor_id',a.vendedor_id).eq('producto_id',d.prodId);
+      // si no existe la fila, la creamos
+      if(upInv.error) throw upInv.error;
+    }
+    a.faltantes=faltantes; a.sobrantes=sobrantes;
+    toast('Cambios guardados ✓','ok');
+    pintarVerAuditoria();
+  }catch(e){ mostrarError(e); }
+}
+function imprimirAuditoria(){
+  var a = _auditActual;
+  var detTodos = a.detalle||[];
+  // Solo diferencias en la impresión
+  var det = detTodos.filter(function(d){ return (d.fisico - d.sistema) !== 0; });
+  var fecha = new Date(a.fecha).toLocaleDateString('es-SV');
+  var hora = new Date(a.fecha).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+  var vnom = S.vendedor ? S.vendedor.nombre : '';
+  var filas = '';
+  det.forEach(function(d){
+    var dif = d.fisico - d.sistema;
+    var difTxt = dif<0?('-'+Math.abs(dif)):(dif>0?('+'+dif):'0');
+    var color = dif<0?'#C4432B':(dif>0?'#2E8B57':'#666');
+    filas += '<tr><td>'+esc(d.nombre)+'</td>'+
+      '<td class="c-num">'+d.sistema+'</td>'+
+      '<td class="c-num">'+d.fisico+'</td>'+
+      '<td class="c-num" style="color:'+color+';font-weight:bold">'+difTxt+'</td></tr>';
+  });
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Auditoría</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:13px}'+
+    '.head{text-align:center;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px}'+
+    '.head h1{font-size:20px;margin-bottom:4px}'+
+    '.meta{display:flex;justify-content:space-between;margin-bottom:14px}.meta b{font-weight:bold}'+
+    '.resumen{display:flex;gap:20px;margin-bottom:16px}'+
+    '.rbox{flex:1;text-align:center;padding:12px;border:2px solid #ccc;border-radius:8px}'+
+    '.rbox .n{font-size:26px;font-weight:bold}.rbox .l{font-size:11px;color:#666}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px}'+
+    'th{background:#0E7C6B;color:#fff;padding:8px 6px;text-align:left;font-size:12px}'+
+    'td{padding:7px 6px;border-bottom:1px solid #ccc;font-size:12px}'+
+    '.c-num{width:70px;text-align:center;font-weight:bold}th.c-num{color:#fff}'+
+    '.firmas{display:flex;justify-content:space-around;margin-top:50px;gap:40px}'+
+    '.firma{flex:1;text-align:center}.firma .linea{border-top:2px solid #000;margin-bottom:6px;padding-top:44px}'+
+    '.firma .lbl{font-size:12px}'+
+    '@media print{body{padding:10px}}</style></head><body>'+
+    '<div class="head"><h1>REPORTE DE AUDITORÍA</h1><div>Conteo · Golden</div></div>'+
+    '<div class="meta"><div><b>Vendedor:</b> '+esc(vnom)+'</div><div><b>Auditoría #'+a.numero+'</b> · '+fecha+' '+hora+'</div></div>'+
+    '<div class="resumen">'+
+      '<div class="rbox"><div class="n" style="color:#C4432B">'+a.faltantes+'</div><div class="l">CAJAS FALTANTES</div></div>'+
+      '<div class="rbox"><div class="n" style="color:#2E8B57">'+a.sobrantes+'</div><div class="l">CAJAS SOBRANTES</div></div>'+
+    '</div>';
+  if(det.length>0){
+    doc += '<table><thead><tr><th>Producto</th><th class="c-num">Sistema</th><th class="c-num">Físico</th><th class="c-num">Dif.</th></tr></thead><tbody>'+filas+'</tbody></table>';
+  }else{
+    doc += '<p style="text-align:center;padding:30px;color:#666">Esta auditoría no tuvo diferencias.</p>';
+  }
+  doc += '<div class="firmas"><div class="firma"><div class="linea"></div><div class="lbl">Auditó</div></div>'+
+    '<div class="firma"><div class="linea"></div><div class="lbl">Vendedor · '+esc(vnom)+'</div></div></div>'+
+    '</body></html>';
+  var v = window.open('','_blank');
+  if(!v){ toast('Permití las ventanas emergentes para imprimir','err'); return; }
+  v.document.write(doc); v.document.close();
+  setTimeout(function(){ v.print(); }, 400);
+}
+
+/* ══════════════════════════════════════════
+   VISTA: CATÁLOGO
+   ══════════════════════════════════════════ */
+async function vistaCatalogo(){
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando catálogo...</div></div>';
+  try{
+    var r = await sb.from('conteo_productos').select('id,nombre').eq('activo',true).order('nombre').limit(50);
+    if(r.error) throw r.error;
+    var prods = r.data||[];
+    var cnt = await sb.from('conteo_productos').select('id',{count:'exact',head:true}).eq('activo',true);
+    var total = cnt.count||prods.length;
+    var html = '<div class="pantalla activa">'+
+      '<div class="eyebrow">Catálogo</div>'+
+      '<div class="titulo">Productos ('+total+')</div>'+
+      '<div class="subtitulo">Tu catálogo maestro. Mostrando los primeros 50.</div>'+
+      '<button class="btn-grande btn-marca" style="margin-bottom:10px" onclick="nuevoProducto()">+ Agregar producto</button>'+
+      '<button class="btn-grande" style="margin-bottom:10px" onclick="abrirCargaMasiva()">📥 Carga masiva (Excel)</button>'+
+      '<button class="btn-grande btn-gris" style="margin-bottom:14px" onclick="descargarPlantilla()">📄 Descargar Excel de ejemplo</button>'+
+      '<input type="file" id="fileExcel" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarExcel(this)">';
+    if(prods.length===0){
+      html += vacioHTML('🗂️','El catálogo está vacío.<br>Agregá productos con el botón de arriba.');
+    }else{
+      prods.forEach(function(p){
+        html += '<div class="prod" onclick="editarProducto(\''+p.id+'\',\''+esc(p.nombre).replace(/'/g,"\\'")+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">'+
+          '<div class="prod-nom">'+esc(p.nombre)+'</div>'+
+          '<span style="color:var(--gris);font-size:16px">✎</span></div>';
+      });
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+async function nuevoProducto(){
+  var nombre = await modalPedirTexto({
+    titulo:'Nuevo producto',
+    texto:'Escribí el nombre del producto.',
+    placeholder:'Ej: Coca Cola 500 ml',
+    ico:'🗂️', colorIco:'#E4EEF0',
+    textoBtnSi:'Agregar'
+  });
+  if(!nombre) return;
+  toast('Agregando...');
+  try{
+    var r = await sb.from('conteo_productos').insert([{nombre:nombre}]);
+    if(r.error) throw r.error;
+    toast('Producto agregado ✓','ok');
+    vistaCatalogo();
+  }catch(e){ toast('Error: '+((e&&e.message)||'no se pudo'),'err'); }
+}
+async function editarProducto(id, nombreActual){
+  var nuevo = await modalPedirTexto({
+    titulo:'Editar producto',
+    texto:'Cambiá el nombre del producto.',
+    placeholder:nombreActual,
+    ico:'✎', colorIco:'#E4EEF0',
+    textoBtnSi:'Guardar',
+    valor:nombreActual
+  });
+  if(nuevo===null) return; // canceló
+  if(!nuevo){ toast('El nombre no puede quedar vacío','err'); return; }
+  if(nuevo===nombreActual){ return; } // no cambió
+  toast('Guardando...');
+  try{
+    var r = await sb.from('conteo_productos').update({nombre:nuevo}).eq('id',id);
+    if(r.error) throw r.error;
+    toast('Producto actualizado ✓','ok');
+    vistaCatalogo();
+  }catch(e){ toast('Error: '+((e&&e.message)||'no se pudo'),'err'); }
+}
+
+/* ══════════════════════════════════════════
+   CARGA MASIVA DESDE EXCEL
+   ══════════════════════════════════════════ */
+function abrirCargaMasiva(){
+  if(typeof XLSX==='undefined'){ toast('Cargando librería Excel, probá en un momento...','warn'); return; }
+  g('fileExcel').click();
+}
+function descargarPlantilla(){
+  if(typeof XLSX==='undefined'){ toast('Cargando librería Excel, probá en un momento...','warn'); return; }
+  try{
+    // Crear un Excel de ejemplo con la columna Producto y unos ejemplos
+    var datos = [
+      ['Producto'],
+      ['COCA COLA 500 ML X 24'],
+      ['ALOE VERA MANGO 20 - 16.9 ONZ'],
+      ['CAFE INCASA AZUL 24 - 3.53 OZ'],
+      ['(borrá estos ejemplos y poné tus productos)']
+    ];
+    var ws = XLSX.utils.aoa_to_sheet(datos);
+    // Ancho de columna
+    ws['!cols'] = [{wch:45}];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+    XLSX.writeFile(wb, 'ejemplo_productos.xlsx');
+    toast('Excel de ejemplo descargado ✓','ok');
+  }catch(e){
+    toast('Error al descargar: '+((e&&e.message)||'no se pudo'),'err');
+  }
+}
+async function procesarExcel(input){
+  var file = input.files[0];
+  if(!file) return;
+  toast('Leyendo Excel...');
+  try{
+    var data = await file.arrayBuffer();
+    var wb = XLSX.read(data, {type:'array'});
+    // Tomar la primera hoja
+    var hoja = wb.Sheets[wb.SheetNames[0]];
+    var filas = XLSX.utils.sheet_to_json(hoja, {header:1});
+    // Buscar la columna de nombres: la primera columna con texto
+    var nombres = [];
+    for(var i=0;i<filas.length;i++){
+      var fila = filas[i];
+      if(!fila || fila.length===0) continue;
+      var primera = fila[0];
+      if(primera==null) continue;
+      var txt = String(primera).replace(/\t/g,'').trim();
+      // Saltar encabezados comunes
+      if(txt==='' ) continue;
+      var low = txt.toLowerCase();
+      if(low==='producto'||low==='productos'||low==='nombre'||low==='product'||low==='products') continue;
+      nombres.push(txt.slice(0,200));
+    }
+    // Quitar duplicados dentro del mismo Excel
+    var vistos = {}; var limpios = [];
+    nombres.forEach(function(n){ var k=n.toLowerCase(); if(!vistos[k]){ vistos[k]=1; limpios.push(n); } });
+    if(limpios.length===0){ toast('No encontré productos en el Excel','err'); input.value=''; return; }
+    S._cargaMasiva = limpios;
+    input.value='';
+    mostrarPreviewCarga();
+  }catch(e){
+    toast('Error al leer: '+((e&&e.message)||'archivo inválido'),'err');
+    input.value='';
+  }
+}
+function mostrarPreviewCarga(){
+  var prods = S._cargaMasiva;
+  var html = '<div class="pantalla activa">'+
+    '<div class="eyebrow">Carga masiva</div>'+
+    '<div class="titulo">Revisá antes de cargar</div>'+
+    '<div class="subtitulo">Encontré <b>'+prods.length+' productos</b> en el Excel. Los que ya existan no se duplican.</div>'+
+    '<div style="max-height:340px;overflow-y:auto;background:var(--blanco);border:1px solid var(--linea);border-radius:12px;padding:12px;margin-bottom:14px">';
+  prods.slice(0,60).forEach(function(n,i){
+    html += '<div style="padding:6px 0;border-bottom:1px dotted var(--linea);font-size:12.5px">'+(i+1)+'. '+esc(n)+'</div>';
+  });
+  if(prods.length>60) html += '<div style="padding:8px 0;font-size:12px;color:var(--gris)">... y '+(prods.length-60)+' más</div>';
+  html += '</div>';
+  html += '<button class="btn-grande btn-marca" onclick="ejecutarCargaMasiva()">✓ Cargar '+prods.length+' productos</button>';
+  html += '<button class="btn-grande btn-gris" onclick="vistaCatalogo()">Cancelar</button>';
+  html += '</div>';
+  g('app').innerHTML = html;
+}
+async function ejecutarCargaMasiva(){
+  var prods = S._cargaMasiva;
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div><div id="progCarga">Preparando...</div></div></div>';
+  try{
+    // 1. Traer los productos que YA existen (para no duplicar)
+    var exist = await sb.from('conteo_productos').select('nombre');
+    if(exist.error) throw exist.error;
+    var yaExisten = {};
+    (exist.data||[]).forEach(function(p){ yaExisten[p.nombre.toLowerCase()] = 1; });
+    // 2. Filtrar solo los nuevos
+    var nuevos = prods.filter(function(n){ return !yaExisten[n.toLowerCase()]; });
+    if(nuevos.length===0){
+      toast('Todos ya existían, no se duplicó nada','ok');
+      setTimeout(vistaCatalogo, 1000);
+      return;
+    }
+    // 3. Cargar en lotes de 100
+    var cargados = 0;
+    for(var i=0;i<nuevos.length;i+=100){
+      var lote = nuevos.slice(i, i+100).map(function(n){ return {nombre:n}; });
+      var r = await sb.from('conteo_productos').insert(lote);
+      if(r.error) throw r.error;
+      cargados += lote.length;
+      var prog = g('progCarga');
+      if(prog) prog.textContent = 'Cargando... '+cargados+' de '+nuevos.length;
+    }
+    toast(cargados+' productos cargados ✓','ok');
+    setTimeout(vistaCatalogo, 1200);
+  }catch(e){
+    mostrarError(e);
+  }
+}
+
+/* ══════════════════════════════════════════
+   VISTA: GESTIÓN DE VENDEDORES
+   ══════════════════════════════════════════ */
+async function vistaGestionVend(){
+  g('app').innerHTML = '<div class="pantalla activa"><div class="cargando"><div class="spin"></div>Cargando vendedores...</div></div>';
+  try{
+    var r = await sb.from('conteo_vendedores').select('id,nombre,activo').order('nombre');
+    if(r.error) throw r.error;
+    var vends = r.data||[];
+    var html = '<div class="pantalla activa">'+
+      '<div class="eyebrow">Vendedores</div>'+
+      '<div class="titulo">Gestionar vendedores</div>'+
+      '<div class="subtitulo">Agregá o quitá vendedores.</div>'+
+      '<button class="btn-grande btn-marca" style="margin-bottom:14px" onclick="nuevoVendedor()">+ Agregar vendedor</button>';
+    if(vends.length===0){
+      html += vacioHTML('👥','No hay vendedores.<br>Agregá el primero con el botón de arriba.');
+    }else{
+      vends.forEach(function(v){
+        var estado = v.activo ? '' : ' <span style="color:var(--gris);font-size:11px">(inactivo)</span>';
+        html += '<div class="prod"><div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<div class="prod-nom">'+esc(v.nombre)+estado+'</div>'+
+          '<button onclick="borrarVendedor(\''+v.id+'\',\''+esc(v.nombre).replace(/'/g,"\\'")+'\')" style="background:#FBEAE6;border:none;color:var(--rojo);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;font-family:inherit;cursor:pointer">Quitar</button>'+
+          '</div></div>';
+      });
+    }
+    html += '</div>';
+    g('app').innerHTML = html;
+  }catch(e){ mostrarError(e); }
+}
+async function nuevoVendedor(){
+  var nombre = await modalPedirTexto({
+    titulo:'Nuevo vendedor',
+    texto:'Escribí el nombre del vendedor.',
+    placeholder:'Ej: TORO',
+    ico:'👥', colorIco:'#EDEAE3',
+    textoBtnSi:'Agregar'
+  });
+  if(!nombre) return;
+  toast('Agregando...');
+  try{
+    var r = await sb.from('conteo_vendedores').insert([{nombre:nombre}]);
+    if(r.error) throw r.error;
+    toast('Vendedor agregado ✓','ok');
+    vistaGestionVend();
+  }catch(e){ toast('Error: '+((e&&e.message)||'no se pudo'),'err'); }
+}
+async function borrarVendedor(id, nombre){
+  var ok = await modalConfirmar({
+    titulo:'¿Quitar vendedor?',
+    texto:'Se va a ocultar a '+nombre+' de la lista.',
+    ico:'🗑️', colorIco:'#FBEAE6',
+    textoBtnSi:'Quitar', peligro:true
+  });
+  if(!ok) return;
+  toast('Quitando...');
+  try{
+    var r = await sb.from('conteo_vendedores').update({activo:false}).eq('id',id);
+    if(r.error) throw r.error;
+    toast('Vendedor quitado ✓','ok');
+    vistaGestionVend();
+  }catch(e){ toast('Error: '+((e&&e.message)||'no se pudo'),'err'); }
+}
+
+/* ══════════════════════════════════════════
+   HELPERS DE UI
+   ══════════════════════════════════════════ */
+function vacioHTML(ico,txt){
+  return '<div class="vacio"><div class="vacio-ico">'+ico+'</div><div class="vacio-txt">'+txt+'</div></div>';
+}
+function mostrarError(e){
+  var msg = (e && e.message) ? e.message : 'Error desconocido';
+  g('app').innerHTML = '<div class="pantalla activa">'+vacioHTML('⚠️','Algo salió mal:<br>'+esc(msg)+'<br><br>Revisá la conexión y probá de nuevo.')+
+    '<button class="btn-grande btn-gris" onclick="irInicio()">Volver al inicio</button></div>';
+}
+
+/* ══════════════════════════════════════════
+   REGISTRAR SERVICE WORKER (para que sea app instalable)
+   ══════════════════════════════════════════ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(err){
+      console.log('SW no se pudo registrar:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
